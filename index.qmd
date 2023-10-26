@@ -1,0 +1,81 @@
+
+---
+title: "Chem symbol test"
+---
+
+This is a simple chemical symbol test.  You'll be asked to enter chemical symbols for elements.
+
+```{shinylive-r}
+#| standalone: true
+
+
+chem <- data.frame(
+  symbol = c("Al", "Sb", "Ar", "As", "Ba", "Be", "Bi", 
+             "B", "Br", "Cd", "Ca", "C", "Cs", "Cl", "Cr",
+             "Co", "Cu", "F", "Au", "He", "H", "I", "Fe",
+             "Kr", "Pb", "Li", "Mg", "Mn", "Hg", "Ne", "Ni",
+             "N", "O", "P", "Pt", "K", "Rn", "Se", "Si", "Ag",
+             "Na", "Sr", "S", "Te", "Sn", "Ti", "W",
+             "U", "V", "Xe", "Zn", "Zr"),
+  name = c("aluminum", "antimony", "argon", "arsenic", "barium", "beryllium", "bismuth", 
+           "boron", "bromine","cadmium", "calcium", "carbon", "cesium", "chlorine", "chromium",
+           "cobalt", "copper", "fluorine", "gold", "helium", "hydrogen", "iodine", "iron",
+           "krypton", "lead", "lithium", "magnesium", "mangenese", "mercury", "neon", "nickel",
+           "nitrogen", "oxygen", "phosphorus", "platinum", "potassium", "radon", "selenium", "silicon", "silver",
+           "sodium", "strontium", "sulfur", "tellurium", "tin", "titanium", "tungsten",
+           "uranium", "vanadium", "xenon", "zinc", "zirconium")
+)
+
+ui <- fluidPage(
+  
+  fluidRow(
+    column(5, offset = 1, uiOutput("ui_question")),
+    column(5, uiOutput("ui_score"))
+  )
+  
+)
+
+server <- function(input, output, session) {
+
+  last_num <- 0  
+  question_count <- reactiveVal(0)
+  score <- reactiveVal(0)
+
+  question_index <- reactive({
+    question_count()
+    num <- last_num
+    while (num == last_num) {
+      num <- sample(nrow(chem), size = 1)
+    }
+    last_num <- num
+  })
+  
+  output$ui_question <- renderUI({
+    chem_name <- chem[question_index(), ]$name
+    tagList(
+      h3(paste0("Symbol for: ", chem_name)),
+      textInput("txt_sym", label = NULL),
+      actionButton("but_answer", "Submit")
+    )
+  })
+  
+  observeEvent(input$but_answer, {
+    
+    correct_answer <- chem[question_index(), ]$symbol
+    if (input$txt_sym == correct_answer) {
+      score(score() + 1)
+      showNotification(ui = "CORRECT!", type = "message")
+    } else {
+      showNotification(ui = paste0("WRONG.  Correct symbol is ", correct_answer), type = "error")
+    }
+    question_count(question_count() + 1)
+  })
+  
+  output$ui_score <- renderUI({
+    h3(paste0(score(), "/", question_count()))
+  })
+}
+
+app <- shinyApp(ui = ui, server = server)
+
+```
