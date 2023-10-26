@@ -5,6 +5,11 @@ title: "Chem symbol test"
 
 This is a simple chemical symbol test.  You'll be asked to enter chemical symbols for elements.
 
+```{r}
+#| include: false
+library(shinylive)
+```
+
 ```{shinylive-r}
 #| standalone: true
 

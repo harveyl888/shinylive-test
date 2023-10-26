@@ -1,2 +1,15 @@
+project:
+  type: website
+  output-dir: docs
+  
+format: 
+  html
+  
+website:
+  title: "shinylive elements quiz"
+  navbar:
+    left:
+      - index.qmd
+
 filters:
   - shinylive
