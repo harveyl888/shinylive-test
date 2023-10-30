@@ -11,6 +11,7 @@ library(shinylive)
 ```
 
 ```{shinylive-r}
+#| viewerHeight: 300
 #| standalone: true
 
 chem <- data.frame(
