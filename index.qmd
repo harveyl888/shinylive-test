@@ -3,7 +3,7 @@
 title: "Chem symbol test"
 ---
 
-This is a simple chemical symbol test.  You'll be asked to enter chemical symbols for elements.
+This is a simple chemical symbol test.  You'll be tested on chemical elements and their names.
 
 ```{r}
 #| include: false
@@ -31,10 +31,6 @@ chem <- data.frame(
 )
 
 ui <- fluidPage(
-  title = "Element Test",
-  br(),
-  h3("Chemical Elements", style = "color: #3949AB"),
-  br(),
   fluidRow(
     column(5, offset = 1, checkboxGroupInput("chk_options", "Test me on", choices = names(chem), selected = "symbol", inline = TRUE))
   ),
@@ -47,14 +43,17 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
 
-  last_num <- 0  
-  question_count <- reactiveVal(0)
-  score <- reactiveVal(0)
-  question <- reactiveVal(NULL)
-  answer <- reactiveVal(NULL)
-
+  last_num <- 0
+  rv <- reactiveValues(
+    question_count = 0,
+    score = 0,
+    question_type = NULL,
+    question = NULL,
+    answer = NULL
+  )
+  
   question_index <- reactive({
-    question_count()
+    rv$question_count
     num <- last_num
     while (num == last_num) {
       num <- sample(nrow(chem), size = 1)
@@ -64,30 +63,35 @@ server <- function(input, output, session) {
   
   output$ui_question <- renderUI({
     if (length(input$chk_options) > 0) {
-      question_type <- sample(input$chk_options, size = 1)
-      answer_type <- names(chem)[!names(chem) == question_type]
-      question(chem[[question_type]][question_index()])
-      answer(chem[[answer_type]][question_index()])
+      rv$question_type <- sample(input$chk_options, size = 1)
+      answer_type <- names(chem)[!names(chem) == rv$question_type]
+      rv$question <- chem[[rv$question_type]][question_index()]
+      rv$answer <- chem[[answer_type]][question_index()]
       tagList(
-        h3(paste(answer_type, "for:", question())),
-        textInput("txt_question", label = NULL),
+        h3(paste(answer_type, "for:", rv$question)),
+        textInput("txt_answer", label = NULL),
         actionButton("but_answer", "Submit")
       )
     }
   })
   
   observeEvent(input$but_answer, {
-    if (input$txt_question == answer()) {
-      score(score() + 1)
+    if (rv$question_type == "symbol") {
+      answer <- tolower(input$txt_answer)
+    } else {
+      answer <- input$txt_answer
+    }
+    if (answer == rv$answer) {
+      rv$score <- rv$score + 1
       showNotification(ui = "CORRECT!", type = "message")
     } else {
-      showNotification(ui = paste0("WRONG.  Correct answer is ", answer()), type = "error")
+      showNotification(ui = paste0("WRONG.  Correct answer is ", rv$answer), type = "error")
     }
-    question_count(question_count() + 1)
+    rv$question_count <- rv$question_count + 1
   })
   
   output$ui_score <- renderUI({
-    h3(paste0("Score: ", score(), "/", question_count()), style = "color: #388E3C")
+    h3(paste0("Score: ", rv$score, "/", rv$question_count), style = "color: #388E3C")
   })
 }
 
