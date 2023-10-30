@@ -37,7 +37,10 @@ ui <- fluidPage(
   ),
   fluidRow(
     column(5, offset = 1, uiOutput("ui_question")),
-    column(5, uiOutput("ui_score"))
+    column(5, 
+           fluidRow(uiOutput("ui_score")),
+           fluidRow(uiOutput("ui_streak"))
+           )
   )
   
 )
@@ -50,7 +53,8 @@ server <- function(input, output, session) {
     score = 0,
     question_type = NULL,
     question = NULL,
-    answer = NULL
+    answer = NULL,
+    streak = 0
   )
   
   question_index <- reactive({
@@ -84,8 +88,10 @@ server <- function(input, output, session) {
     }
     if (answer == rv$answer) {
       rv$score <- rv$score + 1
+      rv$streak <- rv$streak + 1
       showNotification(ui = "CORRECT!", type = "message")
     } else {
+      rv$streak <- 0
       showNotification(ui = paste0("WRONG.  Correct answer is ", rv$answer), type = "error")
     }
     rv$question_count <- rv$question_count + 1
@@ -94,6 +100,22 @@ server <- function(input, output, session) {
   output$ui_score <- renderUI({
     h3(paste0("Score: ", rv$score, "/", rv$question_count), style = "color: #388E3C")
   })
+  
+  output$ui_streak <- renderUI({
+    if (rv$streak > 29) {
+      col <- "#2E7D32"
+    } else if (rv$streak > 19) {
+      col <- "#00838F"
+    } else if (rv$streak > 9) {
+      col <- "#1E88E5"
+    } else if (rv$streak > 0) {
+      col <- "#8E24AA"
+    } else {
+      col <- "#E53935"
+    }
+    h3(paste0("Streak: ", rv$streak), style = paste0("color: ", col))
+  })
+
 }
 
 app <- shinyApp(ui = ui, server = server)
