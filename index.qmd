@@ -13,7 +13,6 @@ library(shinylive)
 ```{shinylive-r}
 #| standalone: true
 
-
 chem <- data.frame(
   symbol = c("Al", "Sb", "Ar", "As", "Ba", "Be", "Bi", 
              "B", "Br", "Cd", "Ca", "C", "Cs", "Cl", "Cr",
@@ -32,7 +31,13 @@ chem <- data.frame(
 )
 
 ui <- fluidPage(
-  
+  title = "Element Test",
+  br(),
+  h3("Chemical Elements", style = "color: #3949AB"),
+  br(),
+  fluidRow(
+    column(5, offset = 1, checkboxGroupInput("chk_options", "Test me on", choices = names(chem), selected = "symbol", inline = TRUE))
+  ),
   fluidRow(
     column(5, offset = 1, uiOutput("ui_question")),
     column(5, uiOutput("ui_score"))
@@ -45,6 +50,8 @@ server <- function(input, output, session) {
   last_num <- 0  
   question_count <- reactiveVal(0)
   score <- reactiveVal(0)
+  question <- reactiveVal(NULL)
+  answer <- reactiveVal(NULL)
 
   question_index <- reactive({
     question_count()
@@ -56,28 +63,31 @@ server <- function(input, output, session) {
   })
   
   output$ui_question <- renderUI({
-    chem_name <- chem[question_index(), ]$name
-    tagList(
-      h3(paste0("Symbol for: ", chem_name)),
-      textInput("txt_sym", label = NULL),
-      actionButton("but_answer", "Submit")
-    )
+    if (length(input$chk_options) > 0) {
+      question_type <- sample(input$chk_options, size = 1)
+      answer_type <- names(chem)[!names(chem) == question_type]
+      question(chem[[question_type]][question_index()])
+      answer(chem[[answer_type]][question_index()])
+      tagList(
+        h3(paste(answer_type, "for:", question())),
+        textInput("txt_question", label = NULL),
+        actionButton("but_answer", "Submit")
+      )
+    }
   })
   
   observeEvent(input$but_answer, {
-    
-    correct_answer <- chem[question_index(), ]$symbol
-    if (input$txt_sym == correct_answer) {
+    if (input$txt_question == answer()) {
       score(score() + 1)
       showNotification(ui = "CORRECT!", type = "message")
     } else {
-      showNotification(ui = paste0("WRONG.  Correct symbol is ", correct_answer), type = "error")
+      showNotification(ui = paste0("WRONG.  Correct answer is ", answer()), type = "error")
     }
     question_count(question_count() + 1)
   })
   
   output$ui_score <- renderUI({
-    h3(paste0(score(), "/", question_count()))
+    h3(paste0("Score: ", score(), "/", question_count()), style = "color: #388E3C")
   })
 }
 
